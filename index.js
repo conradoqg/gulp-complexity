@@ -4,24 +4,32 @@ var cr = require('complexity-report'),
 	gutil = require('gulp-util'),
 	extend = require('util-extend'),
 	reporter = require('./reporter'),
+	util = require('util'),
 	PluginError = gutil.PluginError;
 
 function complexity(options){
 	options = extend({
-		cyclomatic: [3, 7, 12],
-		halstead: [8, 13, 20],
-		maintainability: 100,
+		maintainability: [80, 120], // For files
+		cyclomatic: [7, 12], // For functions
+		halstead: [13, 20], // For functions
 		breakOnErrors: true,
+		breakOnWarnings: false,
+		showFileSuccess: false,
+		showFileWarning: true,
+		showFileError: true,
+		showFunctionSuccess: false,
+		showFunctionWarning: true,
+		showFunctionError: true,
 		verbose: true
 	}, options);
 
 	// always making sure threasholds are arrays
 	if(!Array.isArray(options.cyclomatic)){
-		options.cyclomatic = [options.cyclomatic];
+		options.cyclomatic = [options.cyclomatic, options.cyclomatic];
 	}
 
 	if(!Array.isArray(options.halstead)){
-		options.halstead = [options.halstead];
+		options.halstead = [options.halstead, options.halstead];
 	}
 
 	var files = [];
@@ -40,7 +48,8 @@ function complexity(options){
 		cb(null, file);
 	}, function(cb){
 		var path = require('path'),
-			helpers = require('./reporter-helpers');
+			helpers = require('./reporter-helpers'),
+			count = [0,0,0,0];
 
 		var maxLength = helpers.longestString(files.map(function(file){
 			return path.relative(file.cwd, file.path);
@@ -51,23 +60,27 @@ function complexity(options){
 		}).forEach(function(file){
 			var base = path.relative(file.cwd, file.path);
 			var report = cr.run(file.contents.toString(), options);
-			var initialErrorCount = errorCount;
 
-			errorCount += report.functions.filter(function(data){
-				return (data.complexity.cyclomatic > options.cyclomatic[0]) || (data.complexity.halstead.difficulty > options.halstead[0]);
-			}).length;
+			var maintainabilityStatus = helpers.invertedLeveler(report.maintainability, options.maintainability[0], options.maintainability[1])
+			count[maintainabilityStatus.code]++;
 
-			if (report.maintainability < options.maintainability) {
-				errorCount++;
-			}
+			report.functions.map(function(fn){
+				var cyclomaticStatus = helpers.normalLeveler(fn.complexity.cyclomatic, options.cyclomatic[0], options.cyclomatic[1])
+				var halsteadStatus = helpers.normalLeveler(fn.complexity.halstead.difficulty, options.halstead[0], options.halstead[1]);
+		                count[cyclomaticStatus.code]++;
+                		count[halsteadStatus.code]++;
+			});
 
-			if (errorCount !== initialErrorCount || options.verbose) {
+			if (options.verbose) {
 				reporter.log(file, report, options, helpers.fitWhitespace(maxLength, base));
 			}
 		});
 
-		if(options.breakOnErrors && errorCount > 0) {
-			this.emit('error', new PluginError('gulp-complexity', 'Complexity too high'));
+		if (
+			options.breakOnErrors && count[3] > 0 ||
+			options.breakOnWarnings && count[2] > 0
+			) {
+			this.emit('error', new PluginError('gulp-complexity', util.format('Complexity too high, found %d error(s) and %d warning(s).', count[3], count[2])));
 		}
 
 		cb();

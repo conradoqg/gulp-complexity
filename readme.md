@@ -20,7 +20,19 @@
 
 ## Options
 
-Bool `breakOnErrors` - Fail the task when files or functions are too complex. Default: true
+    Array `maintainability` - [Error, Warning] threshold for files (more is better). Default: [80, 120]
+	Array `cyclomatic` - [Warning, Error] threshold for functions (less is better). Default: [7, 12]
+    Array `halstead` - [Warning, Error] threshold for functions (less is better). Default: [13, 20]
+
+    Bool `breakOnErrors` - Fail the task when files or functions are too complex and with errors. Default: true
+    Bool `breakOnWarnings` - Fail the task when files or functions are too complex and with warnings. Default: false
+    Bool `showFileSuccess` - Show statistics of successful files. Default: false
+    Bool `showFileWarning` - Show statistics of files with warnings. Default: true
+    Bool `showFileError` - Show statistics of files with errors. Default: true
+    Bool `showFunctionSuccess` - Show statistics of successful functions. Default: false
+    Bool `showFunctionWarning` - Show statistics of functions with warnings. Default: true
+    Bool `showFunctionError` - Show statistics of functions with errors. Default: true
+    Bool `verbose` - Show output at all. Default: true
 
 ## License
 
