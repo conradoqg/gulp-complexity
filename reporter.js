@@ -5,8 +5,6 @@ multiline = require('multiline');
 template = require('string-interpolate');
 gutil = require('gulp-util');
 
-fullReportFn = template(fullReportTemplate);
-
 fileTemplate = multiline(function(){/*
 { check } { fittedName } { bar } - { maintainability }: Cycl: { cyclomatic }, Hal: { halstead } ( Bugs: { bugs }, Eff: { effort }, Vol: { volume }, Voc: { vocabulary } )
 */});
